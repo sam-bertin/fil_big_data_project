@@ -1,5 +1,3 @@
-version: "3.1"
-
 services:
   spark:
     image: docker.io/bitnami/spark:3.5.3
@@ -20,8 +18,8 @@ services:
     environment:
       - SPARK_MODE=worker
       - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G # can be changed
-      - SPARK_WORKER_CORES=1 # can be changed
+      - SPARK_WORKER_MEMORY=2G # can be changed
+      - SPARK_WORKER_CORES=2 # can be changed
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
@@ -43,9 +41,9 @@ services:
 
   notebook:
     image: grosinosky/bigdata_fila3_jupyter
-    build:
-      context: .
-      dockerfile: Dockerfile-jupyter
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile-jupyter
     container_name: jupyter
     ports:
       - "8888:8888"
@@ -81,3 +79,37 @@ services:
       - KAFKA_CLUSTERS_0_NAME=kafka1
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka1:9092
       - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper1:2181
+  # ----- Flink -----
+  flink-jobmanager:
+    image: flink:latest
+    command: jobmanager
+    environment:
+      # On indique au JobManager son adresse (le nom du service)
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+    ports:
+      # Par défaut, l'interface web du JobManager écoute sur le port 8081
+      - "8083:8083"
+    restart: on-failure
+
+  flink-taskmanager:
+    image: flink:latest
+    command: taskmanager
+    environment:
+      # On précise l'adresse du JobManager pour que le TaskManager puisse s'y connecter
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: flink-jobmanager
+    depends_on:
+      - flink-jobmanager
+    restart: on-failure
+
+  # ----- Grafana -----
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: on-failure
