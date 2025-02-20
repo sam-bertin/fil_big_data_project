@@ -112,4 +112,9 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-    restart: on-failure
+      - GF_PLUGINS_PREINSTALL=grafana-clock-panel, hamedkarbasi93-kafka-datasource
+    restart: unless-stopped
+    volumes:
+      - grafana-storage:/var/lib/grafana
+volumes:
+  grafana-storage: {}
